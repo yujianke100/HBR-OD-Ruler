@@ -1,5 +1,7 @@
 # HBR-OD-Ruler
 
+[NGA帖子传送门](https://bbs.nga.cn/read.php?tid=41657371&_ff=510381)
+
 ## 简介
 
 此脚本为《Heaven Burns Red》游戏中的 **Overdrive (OD) 条** 提供了一个刻度尺，用于帮助玩家计算 **Hit 数**，从而掌握如何攒满一条 OD 条（40 Hit 可以攒满一条 OD 条）。
