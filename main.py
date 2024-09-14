@@ -81,6 +81,9 @@ def create_ruler_for_window(window_title):
     target_x = int(target_x * (window_width / 1920))
     target_y = int(target_y * (window_height / 1080))
 
+    if(window_width == 2560):
+        target_x = 1577
+
     # 绘制刻度
     num_ticks = 40  # 总刻度数
     tick_interval = ruler_length / num_ticks  # 每个刻度的间隔
