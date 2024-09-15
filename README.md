@@ -1,6 +1,6 @@
 # HBR-OD-Ruler
 
-![image](https://github.com/user-attachments/assets/540db75d-54b0-44e2-af92-8479e7076bbe)
+![image](sample.png)
 
 
 [NGA帖子传送门](https://bbs.nga.cn/read.php?tid=41657371&_ff=510381)

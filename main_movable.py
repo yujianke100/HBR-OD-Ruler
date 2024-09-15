@@ -71,8 +71,9 @@ class RulerWidget(QWidget):
 
         # 创建渐变效果
         gradient = QLinearGradient(x40, 0, x1, 0)  # 从左到右渐变
-        gradient.setColorAt(0.0, QColor(255, 0, 0, 175))  # 红色，带透明度
-        gradient.setColorAt(1.0, QColor(0, 200, 0, 175))  # 绿色，带透明度
+        gradient.setColorAt(0.1, QColor(197, 227, 91, 175))  
+        gradient.setColorAt(0.5, QColor(80, 211, 191, 175))
+        gradient.setColorAt(0.9, QColor(232, 116, 199, 175)) 
 
         # 绘制渐变背景矩形
         painter.setBrush(gradient)
@@ -84,7 +85,7 @@ class RulerWidget(QWidget):
         font_size = int(font_size * (self.ruler_length / pixel_len))
         font = QFont("Arial", font_size, QFont.Bold)
         painter.setFont(font)
-        painter.setPen(QColor(246, 216, 248))
+        painter.setPen(QColor(255-246,255-216,255-248))
 
         long_line_length = 40
         short_line_length = 25
@@ -101,7 +102,7 @@ class RulerWidget(QWidget):
             if i % 5 == 0 and i != 0:
                 text = str(i)
                 text_rect = painter.boundingRect(x - 20, int(40 * (self.ruler_length / pixel_len)), 40, 20, Qt.AlignCenter, text)
-                painter.setPen(QColor(246, 216, 248))
+                painter.setPen(QColor(255-246,255-216,255-248))
                 painter.drawText(text_rect, Qt.AlignCenter, text)
 
 def create_ruler_with_input():

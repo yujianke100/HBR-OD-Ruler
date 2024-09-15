@@ -95,8 +95,9 @@ class RulerWidget(QWidget):
         # painter.drawRect(QRect(x40, int(35 * (self.ruler_length / pixel_len)), background_width - int(self.blank_space + self.ruler_length - 38 * tick_interval), background_height))  # 仅绘制从刻度1到刻度40的背景矩形
         # 创建渐变效果
         gradient = QLinearGradient(x40, 0, x1, 0)  # 从左到右渐变
-        gradient.setColorAt(0.0, QColor(255, 0, 0, 175))  # 红色，带透明度
-        gradient.setColorAt(1.0, QColor(0, 200, 0, 175))  # 绿色，带透明度
+        gradient.setColorAt(0.1, QColor(197, 227, 91, 175)) 
+        gradient.setColorAt(0.5, QColor(80, 211, 191, 175))
+        gradient.setColorAt(0.9, QColor(232, 116, 199, 175)) 
 
         # 绘制渐变背景矩形
         painter.setBrush(gradient)
@@ -110,7 +111,7 @@ class RulerWidget(QWidget):
         font = QFont("Arial", font_size, QFont.Bold)
         painter.setFont(font)
         # painter.setPen(QColor(220,220,220))
-        painter.setPen(QColor(246,216,248))
+        painter.setPen(QColor(255-246,255-216,255-248))
 
         long_line_length = 40  # 长刻度线的长度
         short_line_length = 25  # 短刻度线的长度
@@ -136,7 +137,7 @@ class RulerWidget(QWidget):
 
                 # 绘制刻度数字
                 # painter.setPen(QColor(220,220,220))
-                painter.setPen(QColor(246,216,248))
+                painter.setPen(QColor(255-246,255-216,255-248))
                 painter.drawText(text_rect, Qt.AlignCenter, text)
 
 def create_ruler_for_window(window_title):
