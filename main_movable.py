@@ -1,17 +1,17 @@
-import time
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog
+from PyQt5.QtGui import QPainter, QColor, QFont, QLinearGradient
+from PyQt5.QtCore import Qt, QRect, QPoint
 import pygetwindow as gw
-import win32gui
+# import win32gui
+# import time
 import ctypes
-import tkinter as tk
-# from tkinter import ttk
-import re
 
 # 设置 DPI 感知，避免高分辨率屏幕下的缩放问题
 try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(1)  # Windows 8.1 or later
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)  # Windows 8.1 或更高版本
 except:
     try:
-        ctypes.windll.user32.SetProcessDPIAware()  # Windows 8 or earlier
+        ctypes.windll.user32.SetProcessDPIAware()  # Windows 8 或更早版本
     except:
         pass
 
@@ -19,128 +19,105 @@ except:
 pixel_len = 546  # 基准长度在 1080p 下
 def get_resolution_scale(display_wh):
     # 取出分辨率的宽
-    print(display_wh)
     display_w = display_wh.split("x")[0]
     # 根据分辨率的宽来计算比例
-    return pixel_len * (int(display_w) / 1920)
+    return int(pixel_len * (int(display_w) / 1920))  # 转换为整数
 
+class RulerWidget(QWidget):
+    def __init__(self, ruler_length, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WA_TranslucentBackground)  # 设置背景透明
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)  # 去掉边框并保持在最上方
 
-# 寻找指定窗口并获取窗口位置和大小
-def find_window_and_get_position(window_title):
-    all_windows = gw.getAllTitles()
-    # 找到包含指定标题的窗口
-    window_titles = [title for title in all_windows if window_title in title]
+        self.ruler_length = ruler_length
 
-    if window_titles:
-        chosen_window_title = window_titles[0]
-        window = gw.getWindowsWithTitle(chosen_window_title)[0]
+        self.blank_space = int(15 * (self.ruler_length / pixel_len))
 
-        # 如果窗口最小化，恢复窗口
-        window.restore()
-        window.activate()
-        time.sleep(0.5)
+        # 确保所有参数都是整数
+        self.setGeometry(100, 100, ruler_length + 20, 80)  # 设置窗口位置和大小
 
-        hwnd = window._hWnd
+        # 拖动相关变量
+        self.dragging = False
+        self.offset = QPoint()
 
-        # 获取窗口的客户端矩形大小
-        client_rect = win32gui.GetClientRect(hwnd)
-        client_left, client_top = win32gui.ClientToScreen(hwnd, (client_rect[0], client_rect[1]))
-        client_right, client_bottom = win32gui.ClientToScreen(hwnd, (client_rect[2], client_rect[3]))
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.dragging = True
+            self.offset = event.pos()
 
-        width = client_right - client_left
-        height = client_bottom - client_top
+    def mouseMoveEvent(self, event):
+        if self.dragging:
+            new_pos = event.globalPos() - self.offset
+            self.move(new_pos)
 
-        return (client_left, client_top, width, height)
-    else:
-        print(f"未找到窗口: {window_title}")
-        return None
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.dragging = False
 
-# 创建刻度尺并调整位置
-def create_ruler_for_window(window_title):
-    # window_info = find_window_and_get_position(window_title)
-    # if not window_info:
-    #     return  # 如果没有找到窗口，退出
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
 
-    # client_left, client_top, window_width, window_height = window_info
+        num_ticks = 40  # 总刻度数
+        tick_interval = self.ruler_length / num_ticks  # 每个刻度的间隔
+        x1 = int(self.blank_space + self.ruler_length - tick_interval)  # 刻度1的x坐标
+        x40 = int(self.blank_space + self.ruler_length - 47 * tick_interval)  # 刻度40的x坐标
 
-    # 确定分辨率标识符
-    # resolution = f"{window_width}x{window_height}"
-    resolution = input("Enter the resolution of the window. Default: 1920x1080: ")
-    # 正则表达式匹配分辨率是否是数字x数字的格式
-    while resolution != '' and (not re.match(r"^\d{3,4}x\d{3,4}$", resolution)):
-        resolution = input("Wrong input. Enter the resolution of the window. Default: 1920x1080: ")
-    if resolution == '':
-        resolution = "1920x1080"
-    window_width = int(resolution.split("x")[0])
-    window_height = int(resolution.split("x")[1])
+        # 计算背景矩形的宽度
+        background_width = x1 - x40
+        background_height = 25  # 1080p下背景的高度
+        background_height = int(background_height * (self.ruler_length / pixel_len)) + 5
 
-    # 根据分辨率调整尺子的长度
-    ruler_length = get_resolution_scale(resolution)
+        # 创建渐变效果
+        gradient = QLinearGradient(x40, 0, x1, 0)  # 从左到右渐变
+        gradient.setColorAt(0.0, QColor(255, 0, 0, 175))  # 红色，带透明度
+        gradient.setColorAt(1.0, QColor(0, 200, 0, 175))  # 绿色，带透明度
 
-    # 隐藏主Tk窗口，避免出现空白窗口
-    root = tk.Tk()
-    root.withdraw()
+        # 绘制渐变背景矩形
+        painter.setBrush(gradient)
+        painter.setPen(Qt.NoPen)
+        painter.drawRect(QRect(x40, int(35 * (self.ruler_length / pixel_len)), background_width - int(self.blank_space + self.ruler_length - 38 * tick_interval), background_height))
 
-    # 创建新的 Tkinter 窗口
-    ruler_window = tk.Toplevel(root)
-    ruler_window.title(f"Ruler - {resolution}")
-    ruler_window.geometry(f"{int(ruler_length + 20)}x80")  # 设置高度为50避免空白
-    ruler_window.attributes("-alpha", 0.6)  # 设置透明度
-    ruler_window.overrideredirect(True)  # 去掉边框
-    ruler_window.attributes("-topmost", True)  # 保持在最上方
+        # 绘制刻度
+        font_size = 12
+        font_size = int(font_size * (self.ruler_length / pixel_len))
+        font = QFont("Arial", font_size, QFont.Bold)
+        painter.setFont(font)
+        painter.setPen(QColor(246, 216, 248))
 
-    # 添加拖动功能
-    def start_move(event):
-        ruler_window.x = event.x
-        ruler_window.y = event.y
+        long_line_length = 40
+        short_line_length = 25
+        long_line_length = int(long_line_length * (self.ruler_length / pixel_len))
+        short_line_length = int(short_line_length * (self.ruler_length / pixel_len))
 
-    def stop_move(event):
-        ruler_window.x = None
-        ruler_window.y = None
+        for i in range(num_ticks + 1):
+            x = int(self.blank_space + self.ruler_length - i * tick_interval)
+            line_length = long_line_length if i % 5 == 0 else short_line_length
 
-    def on_motion(event):
-        x = (event.x_root - ruler_window.x)
-        y = (event.y_root - ruler_window.y)
-        ruler_window.geometry(f"+{x}+{y}")
+            if i >= 2:
+                painter.drawLine(x, 0, x, line_length)
 
-    ruler_window.bind("<ButtonPress-1>", start_move)
-    ruler_window.bind("<ButtonRelease-1>", stop_move)
-    ruler_window.bind("<B1-Motion>", on_motion)
+            if i % 5 == 0 and i != 0:
+                text = str(i)
+                text_rect = painter.boundingRect(x - 20, int(40 * (self.ruler_length / pixel_len)), 40, 20, Qt.AlignCenter, text)
+                painter.setPen(QColor(246, 216, 248))
+                painter.drawText(text_rect, Qt.AlignCenter, text)
 
+def create_ruler_with_input():
+    # 提示用户输入分辨率
+    app = QApplication([])
 
-    # 创建 Canvas 用于绘制刻度
-    canvas = tk.Canvas(ruler_window, width=ruler_length + 20, height=100, bg='white')
-    canvas.pack()
+    resolution, ok = QInputDialog.getText(None, '输入分辨率', '请输入分辨率 (格式: 宽x高)：')
+    
+    if ok and resolution:
+        # 根据用户输入的分辨率调整尺子的长度
+        ruler_length = get_resolution_scale(resolution)
 
-    # 绘制刻度
-    num_ticks = 40  # 总刻度数
-    tick_interval = ruler_length / num_ticks  # 每个刻度的间隔
+        ruler_widget = RulerWidget(ruler_length)
+        ruler_widget.show()
 
-    for i in range(num_ticks + 1):
-        # 从右向左递增刻度
-        x = 10 + ruler_length - i * tick_interval
+        app.exec_()
 
-        # 每 5 个刻度标注数字
-        if i % 5 == 0:
-            canvas.create_line(x, 0, x, 35, fill="black", width=2)
-            canvas.create_text(x, 40, text=str(i), fill="black", font=("Arial", 10), anchor="n")  # 使用 anchor="n" 来对齐数字
-        else:
-            canvas.create_line(x, 0, x, 25, fill="black", width=1)
-
-    # 根据窗口的分辨率调整尺子的位置
-    target_x = 1180
-    target_y = 65
-    # 根据实际窗口的分辨率宽高比例调整target_y
-    target_y = int(target_y * (window_width/window_height)/(16/9))
-    # 比例调整
-    target_x = int(target_x * (window_width / 1920))
-    target_y = int(target_y * (window_height / 1080))
-
-    # 调整尺子的初始位置
-    ruler_window.geometry(f"+{target_x}+{target_y}")
-
-    root.mainloop()
-
-# 启动程序
 if __name__ == "__main__":
-    create_ruler_for_window("HeavenBurnsRed")
+    create_ruler_with_input()
